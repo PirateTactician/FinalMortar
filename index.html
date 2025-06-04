@@ -1,104 +1,144 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>PirateActual Mortar Calculator</title>
-<style>
-  body {
-    font-family: monospace, monospace;
-    background-color: #1a1a1a;
-    color: #e0e0e0;
-    padding: 20px;
-    max-width: 480px;
-    margin: auto;
-  }
-  label {
-    display: block;
-    margin-top: 10px;
-  }
-  input[type=number] {
-    background-color: #333;
-    color: #fff;
-    border: 1px solid #555;
-    padding: 8px;
-    margin-top: 5px;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  select {
-    margin-top: 10px;
-    padding: 8px;
-    width: 100%;
-    background-color: #333;
-    color: #eee;
-    border: 1px solid #555;
-  }
-  button {
-    margin-top: 20px;
-    padding: 12px;
-    background-color: #444;
-    border: none;
-    color: #eee;
-    font-weight: bold;
-    cursor: pointer;
-    width: 100%;
-  }
-  button:hover {
-    background-color: #555;
-  }
-  pre {
-    background-color: #222;
-    padding: 15px;
-    white-space: pre-wrap;
-    margin-top: 20px;
-    border-radius: 6px;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <title>PirateActual Mortar Solutions</title>
+  <style>
+    body {
+      font-family: monospace;
+      background-color: #1a1a1a;
+      color: #e0e0e0;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    input, select {
+      background-color: #333;
+      color: #fff;
+      border: 1px solid #555;
+      padding: 8px;
+      margin-top: 5px;
+      width: 100%;
+      max-width: 300px;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 15px;
+      background-color: #444;
+      border: none;
+      color: #eee;
+      cursor: pointer;
+      font-weight: bold;
+      width: 100%;
+      max-width: 320px;
+    }
+    button:hover {
+      background-color: #555;
+    }
+    pre {
+      background-color: #222;
+      padding: 15px;
+      white-space: pre-wrap;
+      margin-top: 20px;
+      max-width: 600px;
+      overflow-x: auto;
+    }
+    .toggle-container {
+      margin-bottom: 20px;
+    }
+  </style>
 </head>
 <body>
-  <h1>PirateActual Mortar Calculator</h1>
 
-  <label for="calcType">Select Calculator:</label>
-  <select id="calcType">
-    <option value="nato">NATO Mortar</option>
-    <option value="soviet">Soviet Mortar</option>
-  </select>
+  <h1>PirateActual Mortar Solutions</h1>
 
-  <label for="azimuth">Azimuth (°):</label>
-  <input type="number" id="azimuth" step="0.1" placeholder="e.g. 90" />
+  <div class="toggle-container">
+    <label>
+      <input type="radio" name="mode" value="nato" checked onchange="updateMode()" /> NATO HE
+    </label>
+    <label>
+      <input type="radio" name="mode" value="soviet" onchange="updateMode()" /> Soviet (RUS)
+    </label>
+  </div>
 
-  <label for="range">Range (m):</label>
-  <input type="number" id="range" placeholder="e.g. 1000" />
+  <div id="common-inputs">
+    <label for="azimuth">Azimuth (°):</label>
+    <input type="number" id="azimuth" step="0.1" />
 
-  <label for="firingElevation">Firing Position Elevation (m):</label>
-  <input type="number" id="firingElevation" placeholder="e.g. 50" />
+    <label for="range">Range (m):</label>
+    <input type="number" id="range" />
+  </div>
 
-  <label for="targetElevation">Target Position Elevation (m):</label>
-  <input type="number" id="targetElevation" placeholder="e.g. 70" />
+  <div id="nato-extra" style="display:none;">
+    <label>
+      <input type="checkbox" id="slopeToggle" onchange="toggleSlopeInputs()" /> Enable slope correction
+    </label>
+    <div id="slopeInputs" style="display:none;">
+      <label for="firingElevation">Firing Position Elevation (m):</label>
+      <input type="number" id="firingElevationNATO" />
 
-  <button id="calcBtn">Get Fire Solution</button>
+      <label for="targetElevation">Target Position Elevation (m):</label>
+      <input type="number" id="targetElevationNATO" />
+    </div>
+  </div>
+
+  <div id="soviet-extra" style="display:none;">
+    <label for="firingElevationSOV">Firing Position Elevation (m):</label>
+    <input type="number" id="firingElevationSOV" />
+
+    <label for="targetElevationSOV">Target Position Elevation (m):</label>
+    <input type="number" id="targetElevationSOV" />
+  </div>
+
+  <button onclick="calculateSolution()">Get Fire Solution</button>
 
   <pre id="output"></pre>
 
 <script>
-  // Soviet base tables
-  const sovietRing2 = {
-    200: 1432, 300: 1397, 400: 1362, 500: 1325, 600: 1288, 700: 1248, 800: 1207,
-    900: 1162, 1000: 1114, 1100: 1060, 1200: 997, 1300: 914, 1400: 755
-  };
-  const sovietRing3 = {
-    300: 1423, 400: 1392, 500: 1370, 600: 1343, 700: 1315, 800: 1286,
-    900: 1257, 1000: 1226, 1100: 1193, 1200: 1159, 1300: 1123,
-    1400: 1084, 1500: 1040, 1600: 991, 1700: 932, 1800: 851
-  };
-  const sovietRing4 = {
-    400: 1418, 500: 1398, 600: 1376, 700: 1355, 800: 1333, 900: 1311, 1000: 1288,
-    1100: 1264, 1200: 1240, 1300: 1215, 1400: 1189, 1500: 1161, 1600: 1133,
-    1700: 1102, 1800: 1069, 1900: 1034, 2000: 995, 2100: 950, 2200: 898, 2300: 820
-  };
+  // Initial setup: show NATO inputs by default
+  function updateMode() {
+    const mode = document.querySelector('input[name="mode"]:checked').value;
+    if (mode === 'nato') {
+      document.getElementById('nato-extra').style.display = 'block';
+      document.getElementById('soviet-extra').style.display = 'none';
+      document.getElementById('slopeToggle').checked = false;
+      toggleSlopeInputs();
+      document.getElementById('output').textContent = '';
+    } else {
+      document.getElementById('nato-extra').style.display = 'none';
+      document.getElementById('soviet-extra').style.display = 'block';
+      document.getElementById('output').textContent = '';
+    }
+  }
 
-  // NATO base tables
+  function toggleSlopeInputs() {
+    document.getElementById('slopeInputs').style.display = 
+      document.getElementById('slopeToggle').checked ? 'block' : 'none';
+  }
+
+  // NATO interpolation function
+  function interpolateMil(range, ringData) {
+    const keys = Object.keys(ringData).map(Number).sort((a, b) => a - b);
+    if (range <= keys[0]) return ringData[keys[0]];
+    if (range >= keys[keys.length - 1]) return ringData[keys[keys.length - 1]];
+    for (let i = 0; i < keys.length - 1; i++) {
+      const low = keys[i];
+      const high = keys[i + 1];
+      if (range >= low && range <= high) {
+        const milLow = ringData[low];
+        const milHigh = ringData[high];
+        const ratio = (range - low) / (high - low);
+        return Math.round(milLow + (milHigh - milLow) * ratio);
+      }
+    }
+  }
+
+  // NATO MIL tables
   const natoRing2 = {
     200: 1538, 300: 1507, 400: 1475, 500: 1443, 600: 1410,
     700: 1376, 800: 1341, 900: 1305, 1000: 1266, 1100: 1225,
@@ -118,106 +158,127 @@
     2400: 1104, 2500: 1070, 2600: 1032, 2700: 993, 2800: 930, 2900: 870
   };
 
-  // Helper: interpolate mils in a given ring table for a given range
-  function interpolateMil(range, table) {
-    const keys = Object.keys(table).map(Number).sort((a,b) => a - b);
-    if(range <= keys[0]) return table[keys[0]];
-    if(range >= keys[keys.length-1]) return table[keys[keys.length-1]];
-    for(let i=0; i<keys.length-1; i++){
-      const low = keys[i];
-      const high = keys[i+1];
-      if(range >= low && range <= high){
-        const ratio = (range - low) / (high - low);
-        return table[low] + (table[high] - table[low]) * ratio;
-      }
-    }
-  }
+  // Soviet MIL tables
+  const sovRing2 = {
+    200: 1432, 300: 1397, 400: 1362, 500: 1325, 600: 1288, 700: 1248, 800: 1207,
+    900: 1162, 1000: 1114, 1100: 1060, 1200: 997, 1300: 914, 1400: 755
+  };
+  const sovRing3 = {
+    300: 1423, 400: 1392, 500: 1370, 600: 1343, 700: 1315, 800: 1286,
+    900: 1257, 1000: 1226, 1100: 1193, 1200: 1159, 1300: 1123,
+    1400: 1084, 1500: 1040, 1600: 991, 1700: 932, 1800: 851
+  };
+  const sovRing4 = {
+    400: 1418, 500: 1398, 600: 1376, 700: 1355, 800: 1333, 900: 1311, 1000: 1288,
+    1100: 1264, 1200: 1240, 1300: 1215, 1400: 1189, 1500: 1161, 1600: 1133,
+    1700: 1102, 1800: 1069, 1900: 1034, 2000: 995, 2100: 950, 2200: 898, 2300: 820
+  };
 
-  function calculate() {
-    const calcType = document.getElementById('calcType').value;
+  // Soviet slope correction factor
+  const sovSlopeCorrectionFactor = 6.3;
+
+  function calculateSolution() {
+    const mode = document.querySelector('input[name="mode"]:checked').value;
     const azimuth = parseFloat(document.getElementById('azimuth').value);
     const range = parseFloat(document.getElementById('range').value);
-    const firingElevation = parseFloat(document.getElementById('firingElevation').value);
-    const targetElevation = parseFloat(document.getElementById('targetElevation').value);
 
-    const output = document.getElementById('output');
-    output.textContent = '';
+    if (mode === 'nato') {
+      // NATO inputs & slope toggle
+      const useSlope = document.getElementById('slopeToggle').checked;
+      const firingElevation = useSlope ? parseFloat(document.getElementById('firingElevationNATO').value) : null;
+      const targetElevation = useSlope ? parseFloat(document.getElementById('targetElevationNATO').value) : null;
 
-    // Validate inputs
-    if (
-      isNaN(azimuth) || isNaN(range) ||
-      isNaN(firingElevation) || isNaN(targetElevation)
-    ) {
-      output.textContent = 'Please fill in all fields with valid numbers.';
-      return;
-    }
-    if(range <= 0){
-      output.textContent = 'Range must be greater than 0.';
-      return;
-    }
-
-    // Compute slope angle and adjusted horizontal range
-    const elevationDiff = targetElevation - firingElevation;
-    const slopeAngleRad = Math.atan(elevationDiff / range);
-    const slopeAngleDeg = slopeAngleRad * (180 / Math.PI);
-    const adjustedRange = range * Math.cos(slopeAngleRad);
-
-    let ringTable, ring;
-    let baseMils, finalMils, slopeCorrection;
-
-    if(calcType === 'soviet'){
-      // Select ring
-      if(adjustedRange <= 1400){
-        ringTable = sovietRing2;
-        ring = 2;
-      } else if(adjustedRange <= 1800){
-        ringTable = sovietRing3;
-        ring = 3;
-      } else {
-        ringTable = sovietRing4;
-        ring = 4;
+      if (isNaN(azimuth) || isNaN(range)) {
+        document.getElementById('output').textContent = 'Please enter Azimuth and Range.';
+        return;
       }
-      baseMils = interpolateMil(adjustedRange, ringTable);
+      if (useSlope && (isNaN(firingElevation) || isNaN(targetElevation))) {
+        document.getElementById('output').textContent = 'Please enter elevations for slope correction.';
+        return;
+      }
 
-      // Slope correction
-      slopeCorrection = (elevationDiff < 0) ? (Math.abs(slopeAngleDeg) * 20) : (slopeAngleDeg * 15);
-      finalMils = baseMils + slopeCorrection;
+      // Select ring and table based on range
+      let ring, table;
+      if (range <= 1600) {
+        ring = 2;
+        table = natoRing2;
+      } else if (range <= 2300) {
+        ring = 3;
+        table = natoRing3;
+      } else {
+        ring = 4;
+        table = natoRing4;
+      }
+
+      // Base mils from interpolation
+      const baseMils = interpolateMil(range, table);
+
+      let slopeAngleDeg = 0;
+      let slopeCorrection = 0;
+      let finalMils = baseMils;
+
+      if (useSlope) {
+        const elevationDiff = targetElevation - firingElevation;
+        const slopeAngleRad = Math.atan(elevationDiff / range);
+        slopeAngleDeg = slopeAngleRad * (180 / Math.PI);
+        slopeCorrection = slopeAngleDeg * 10; // NATO uses factor 10
+        finalMils = Math.round(baseMils - slopeCorrection);
+      }
+
+      // Output
+      let output = `NATO HE Mortar Solution:\n\n`;
+      output += `Azimuth: ${azimuth.toFixed(1)}°\nRange: ${Math.round(range)} m\nRing: ${ring}\nBase Elevation: ${baseMils} MIL\n`;
+      if (useSlope) {
+        output += `Slope Angle: ${slopeAngleDeg.toFixed(2)}°\nSlope Correction (D=10): ${slopeCorrection.toFixed(1)} MIL\nFinal Elevation: ${finalMils} MIL\n`;
+        output += `Firing Pos Elevation: ${firingElevation} m\nTarget Pos Elevation: ${targetElevation} m\n`;
+      }
+      document.getElementById('output').textContent = output;
+
     } else {
-      // NATO
-      if(adjustedRange <= 1600){
-        ringTable = natoRing2;
-        ring = 2;
-      } else if(adjustedRange <= 2300){
-        ringTable = natoRing3;
-        ring = 3;
-      } else {
-        ringTable = natoRing4;
-        ring = 4;
+      // Soviet inputs
+      const firingElevation = parseFloat(document.getElementById('firingElevationSOV').value);
+      const targetElevation = parseFloat(document.getElementById('targetElevationSOV').value);
+
+      if (isNaN(azimuth) || isNaN(range) || isNaN(firingElevation) || isNaN(targetElevation)) {
+        document.getElementById('output').textContent = 'Please enter all input values.';
+        return;
       }
-      baseMils = interpolateMil(adjustedRange, ringTable);
 
-      // Slope correction (NATO uses +10 for downhill, -15 for uphill)
-      slopeCorrection = (elevationDiff < 0) ? (Math.abs(slopeAngleDeg) * 10) : (slopeAngleDeg * -15);
-      finalMils = baseMils + slopeCorrection;
+      const elevationDiff = targetElevation - firingElevation;
+      const slopeAngleRad = Math.atan(elevationDiff / range);
+      const slopeAngleDeg = slopeAngleRad * (180 / Math.PI);
+
+      const adjustedRange = range * Math.cos(slopeAngleRad);
+
+      // Select ring based on adjustedRange
+      let ring, table;
+      if (adjustedRange <= 1400) {
+        ring = 2;
+        table = sovRing2;
+      } else if (adjustedRange <= 1800) {
+        ring = 3;
+        table = sovRing3;
+      } else {
+        ring = 4;
+        table = sovRing4;
+      }
+
+      const baseMils = interpolateMil(adjustedRange, table);
+      const slopeCorrection = slopeAngleDeg * sovSlopeCorrectionFactor;
+      const finalMils = Math.round(baseMils - slopeCorrection);
+
+      let output = `Soviet Mortar Solution:\n\n`;
+      output += `Azimuth: ${azimuth.toFixed(1)}°\nRange: ${Math.round(range)} m\nAdjusted Range (horizontal): ${Math.round(adjustedRange)} m\nRing: ${ring}\n`;
+      output += `Base Elevation: ${baseMils.toFixed(1)} MIL\nSlope Angle: ${slopeAngleDeg.toFixed(2)}°\nSlope Correction (D=${sovSlopeCorrectionFactor}): ${slopeCorrection.toFixed(1)} MIL\n`;
+      output += `Final Elevation: ${finalMils} MIL\nFiring Pos Elevation: ${firingElevation} m\nTarget Pos Elevation: ${targetElevation} m\n`;
+
+      document.getElementById('output').textContent = output;
     }
-
-    finalMils = Math.round(finalMils * 10) / 10; // round 1 decimal
-
-    output.textContent = 
-      `Calc type: ${calcType === 'soviet' ? 'Soviet Mortar' : 'NATO Mortar'}\n` +
-      `Azimuth: ${azimuth.toFixed(1)}°\n` +
-      `Range: ${range.toFixed(1)} m\n` +
-      `Firing Elevation: ${firingElevation.toFixed(1)} m\n` +
-      `Target Elevation: ${targetElevation.toFixed(1)} m\n` +
-      `Slope angle: ${slopeAngleDeg.toFixed(2)}°\n` +
-      `Adjusted Range: ${adjustedRange.toFixed(1)} m\n` +
-      `Ring: ${ring}\n` +
-      `Base Elevation (mils): ${baseMils.toFixed(1)}\n` +
-      `Slope Correction (mils): ${slopeCorrection.toFixed(1)}\n` +
-      `Final Fire Solution (mils): ${finalMils}`;
   }
 
-  document.getElementById('calcBtn').addEventListener('click', calculate);
+  // Initialize UI
+  updateMode();
 </script>
+
 </body>
 </html>
